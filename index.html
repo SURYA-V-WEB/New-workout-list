@@ -357,6 +357,36 @@
   const setStates = {};
   workouts.forEach(w => w.exercises.forEach(ex => { setStates[ex.id] = new Array(ex.sets).fill(false); }));
 
+  const STORAGE_KEY = "workoutTrackerState_v1";
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        activeDay, restDuration, warmupCollapsed, setStates
+      }));
+    } catch (e) {}
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved.activeDay && workouts.some(w => w.id === saved.activeDay)) activeDay = saved.activeDay;
+      if (typeof saved.restDuration === "number") restDuration = saved.restDuration;
+      if (typeof saved.warmupCollapsed === "boolean") warmupCollapsed = saved.warmupCollapsed;
+      if (saved.setStates) {
+        workouts.forEach(w => w.exercises.forEach(ex => {
+          const savedArr = saved.setStates[ex.id];
+          if (Array.isArray(savedArr) && savedArr.length === ex.sets) {
+            setStates[ex.id] = savedArr.map(Boolean);
+          }
+        }));
+      }
+    } catch (e) {}
+  }
+  loadState();
+
   let restInterval = null;
   let restSecs = 30;
   const CIRC = 2 * Math.PI * 26;
@@ -414,6 +444,7 @@
     restSecs = dur;
     renderRestDurBtns();
     updateRestUI();
+    saveState();
   }
 
   function renderTabs() {
@@ -423,7 +454,7 @@
       const b = document.createElement("button");
       b.className = "tab" + (w.id === activeDay ? " active" : "");
       b.textContent = w.label;
-      b.onclick = () => { activeDay = w.id; renderTabs(); renderDay(); };
+      b.onclick = () => { activeDay = w.id; renderTabs(); renderDay(); saveState(); };
       c.appendChild(b);
     });
   }
@@ -471,6 +502,7 @@
   function toggleWarmup() {
     warmupCollapsed = !warmupCollapsed;
     renderWarmup();
+    saveState();
   }
 
   function updateProgress() {
@@ -549,12 +581,14 @@
     if (!wasChecked) startRest(ex.name + " — Set " + (idx+1));
     renderExercises();
     updateProgress();
+    saveState();
   }
 
   function resetDay() {
     const day = workouts.find(w => w.id === activeDay);
     day.exercises.forEach(ex => { setStates[ex.id] = new Array(ex.sets).fill(false); });
     dismissRest(); renderExercises(); updateProgress();
+    saveState();
   }
 
   function startRest(label) {
