@@ -18,6 +18,8 @@
       --secondary:#1f1f1f;
       --border:   rgba(255,255,255,0.08);
       --radius:   12px;
+      --pull-color: #3b82f6;
+      --legs-color: #22c55e;
     }
     html, body { background: var(--bg); color: var(--fg); font-family: 'Inter', sans-serif; min-height: 100vh; }
     ::-webkit-scrollbar { width: 4px; }
@@ -106,7 +108,7 @@
     .set-btn.checked { background: var(--primary); border-color: var(--primary); color: #fff; }
     .sets-left { font-size: 0.72rem; color: var(--muted-fg); margin-left: 4px; }
 
-    .rest-overlay { position: fixed; bottom: 24px; left: 0; right: 0; z-index: 50; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; opacity: 0; transform: translateY(16px); transition: opacity 0.25s, transform 0.25s; }
+    .rest-overlay { position: fixed; bottom: 76px; left: 0; right: 0; z-index: 50; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; opacity: 0; transform: translateY(16px); transition: opacity 0.25s, transform 0.25s; }
     .rest-overlay.visible { opacity: 1; transform: translateY(0); pointer-events: all; }
     .rest-card { width: 100%; max-width: 512px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.7); padding: 16px; display: flex; align-items: center; gap: 16px; }
     .rest-timer-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
@@ -162,6 +164,94 @@
     .laps-list { width: 100%; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
     .lap-row { display: flex; justify-content: space-between; padding: 8px 12px; background: var(--secondary); border-radius: 8px; font-size: 0.8rem; color: var(--muted-fg); font-variant-numeric: tabular-nums; }
     .lap-row span:first-child { color: var(--fg); font-weight: 600; }
+
+    /* history / streaks / calendar modal */
+    .history-overlay { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 16px; }
+    .history-overlay.visible { display: flex; }
+    .history-modal { position: relative; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; background: #151515; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 12px 48px rgba(0,0,0,0.8); padding: 18px; }
+    .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .history-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg); }
+
+    .streak-stats { display: flex; gap: 10px; margin-bottom: 18px; }
+    .stat-box { flex: 1; background: var(--secondary); border-radius: 10px; padding: 12px 8px; text-align: center; }
+    .stat-value { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.6rem; color: var(--primary); line-height: 1; font-variant-numeric: tabular-nums; }
+    .stat-label { font-size: 0.6rem; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .cal-nav-btn { background: var(--secondary); border: none; color: var(--muted-fg); width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: color 0.2s, background 0.2s; }
+    .cal-nav-btn:hover { color: var(--fg); background: #262626; }
+    .cal-month-label { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.06em; color: var(--fg); text-transform: uppercase; }
+
+    .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+    .cal-weekday { text-align: center; font-size: 0.62rem; color: var(--muted-fg); font-weight: 700; letter-spacing: 0.04em; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-cell { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 0.72rem; color: var(--muted-fg); background: var(--secondary); position: relative; }
+    .cal-cell.outside { opacity: 0.25; }
+    .cal-cell.today { box-shadow: inset 0 0 0 2px var(--primary); color: var(--fg); }
+    .cal-cell.has-activity { color: var(--fg); }
+    .cal-dots { display: flex; gap: 2px; }
+    .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
+    .cal-dot.push { background: var(--primary); }
+    .cal-dot.pull { background: var(--pull-color); }
+    .cal-dot.legs { background: var(--legs-color); }
+
+    .cal-legend { display: flex; gap: 14px; justify-content: center; margin-top: 14px; }
+    .cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: var(--muted-fg); }
+    .cal-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .cal-legend-dot.push { background: var(--primary); }
+    .cal-legend-dot.pull { background: var(--pull-color); }
+    .cal-legend-dot.legs { background: var(--legs-color); }
+
+    /* ---------- New layout: streak card, categories, screens, bottom nav ---------- */
+
+    .screen { max-width: 512px; margin: 0 auto; padding: 16px 16px 100px; }
+    .screen.hidden { display: none; }
+
+    /* streak card (replaces hero) */
+    .streak-card { border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); padding: 18px; margin-bottom: 16px; }
+    .streak-card-top { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .streak-flame { color: var(--primary); flex-shrink: 0; }
+    .streak-count { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 2.4rem; color: var(--fg); line-height: 1; }
+    .streak-count-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.16em; margin-top: 2px; }
+
+    .week-progress-track { flex: 1; height: 6px; border-radius: 999px; background: var(--secondary); overflow: hidden; }
+    .week-progress-fill { height: 100%; background: var(--primary); border-radius: 999px; transition: width 0.5s ease; }
+
+    .week-checks { display: flex; gap: 10px; margin-top: 14px; }
+    .week-check-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border-radius: 10px; background: var(--secondary); }
+    .week-check-item .check-circle { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); color: var(--muted-fg); transition: background 0.3s, color 0.3s; }
+    .week-check-item.complete .check-circle { background: var(--primary); color: #fff; }
+    .week-check-item.complete.pull .check-circle { background: var(--pull-color); }
+    .week-check-item.complete.legs .check-circle { background: var(--legs-color); }
+    .week-check-label { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.68rem; letter-spacing: 0.1em; color: var(--muted-fg); text-transform: uppercase; }
+
+    .streak-goal-text { font-size: 0.72rem; color: var(--muted-fg); text-align: center; margin-top: 12px; }
+
+    /* category buttons */
+    .category-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .category-btn { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s; }
+    .category-btn:hover { border-color: rgba(232,53,26,0.4); }
+    .category-btn.active { background: rgba(232,53,26,0.08); border-color: var(--primary); }
+    .category-btn.active.pull-active { background: rgba(59,130,246,0.08); border-color: var(--pull-color); }
+    .category-btn.active.legs-active { background: rgba(34,197,94,0.08); border-color: var(--legs-color); }
+    .category-emoji { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
+    .category-info { flex: 1; min-width: 0; }
+    .category-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.15rem; letter-spacing: 0.04em; color: var(--fg); }
+    .category-sub { font-size: 0.72rem; color: var(--muted-fg); margin-top: 2px; }
+    .category-chevron { color: var(--muted-fg); flex-shrink: 0; transition: transform 0.2s, color 0.2s; }
+    .category-btn.active .category-chevron { color: var(--primary); transform: rotate(90deg); }
+
+    /* workout toolbar (rest duration + reset), sits above warm-up */
+    .workout-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--card); }
+
+    /* bottom navigation */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: rgba(12,12,12,0.95); backdrop-filter: blur(8px); border-top: 1px solid var(--border); display: flex; }
+    .bottom-nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 12px; background: none; border: none; color: var(--muted-fg); cursor: pointer; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.2s; }
+    .bottom-nav-btn.active { color: var(--primary); }
+    .bottom-nav-btn svg { flex-shrink: 0; }
+
+    /* history / calendar screens reuse existing card styles */
+    .screen-card { border-radius: 16px; border: 1px solid var(--border); background: #151515; box-shadow: 0 4px 24px rgba(0,0,0,0.4); padding: 18px; }
   </style>
 </head>
 <body>
@@ -174,48 +264,62 @@
       </svg>
       <span class="logo-text">WORKOUT TRACKER</span>
     </div>
-    <div class="header-right">
-      <!-- Rest duration selector -->
-      <div class="rest-selector">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <div class="rest-btns" id="restDurBtns"></div>
-      </div>
-      <button class="btn-reset" onclick="resetDay()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
-        </svg>
-        Reset
-      </button>
-      <button class="btn-tools" onclick="openToolsModal()" title="Timer &amp; Stopwatch">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/>
-        </svg>
-      </button>
-    </div>
   </div>
-  <div class="tabs" id="tabs"></div>
 </header>
 
-<div class="hero">
-  <div class="hero-title-row">
-    <span class="hero-title" id="heroTitle">PULL</span>
-    <svg class="hero-chevron" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="m9 18 6-6-6-6"/>
-    </svg>
+<div id="screen-workout" class="screen">
+
+  <div class="streak-card">
+    <div class="streak-card-top">
+      <svg class="streak-flame" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+      </svg>
+      <div>
+        <div class="streak-count" id="streakCount">0</div>
+        <div class="streak-count-label">Day Streak</div>
+      </div>
+      <div class="week-progress-track" style="margin-left:auto;">
+        <div class="week-progress-fill" id="weekProgressFill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="week-checks" id="weekChecks"></div>
+    <p class="streak-goal-text" id="streakGoalText">Complete all 3 workouts this week</p>
   </div>
-  <p class="hero-tagline" id="heroTagline">Slow, Controlled Tension</p>
-  <div class="progress-row">
-    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-    <span class="progress-label" id="progressLabel">0/0 sets</span>
+
+  <div class="category-grid" id="categoryGrid"></div>
+
+  <div class="workout-toolbar">
+    <div class="rest-selector">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <div class="rest-btns" id="restDurBtns"></div>
+    </div>
+    <button class="btn-reset" onclick="resetDay()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+      </svg>
+      Reset
+    </button>
   </div>
-  <p class="complete-msg" id="completeMsg">Workout complete!</p>
+
+  <div class="hero" style="padding:0 0 12px;">
+    <div class="hero-title-row">
+      <span class="hero-title" id="heroTitle" style="font-size:1.8rem;">PULL</span>
+    </div>
+    <p class="hero-tagline" id="heroTagline">Slow, Controlled Tension</p>
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <span class="progress-label" id="progressLabel">0/0 sets</span>
+    </div>
+    <p class="complete-msg" id="completeMsg">Workout complete!</p>
+  </div>
+
+  <div class="warmup-section" id="warmupSection" style="padding:0 0 4px;"></div>
+
+  <div class="exercise-list" id="exerciseList" style="padding:0 0 8px;"></div>
+
 </div>
-
-<div class="warmup-section" id="warmupSection"></div>
-
-<div class="exercise-list" id="exerciseList"></div>
 
 <div class="rest-overlay" id="restOverlay">
   <div class="rest-card">
@@ -244,19 +348,13 @@
   </div>
 </div>
 
-<div class="tools-overlay" id="toolsOverlay">
-  <div class="tools-backdrop" onclick="closeToolsModal()"></div>
-  <div class="tools-modal">
+<div id="screen-timer" class="screen hidden">
+  <div class="screen-card">
     <div class="tools-header">
       <div class="tools-tabs">
         <button class="tools-tab active" id="tabTimerBtn" onclick="switchToolsTab('timer')">TIMER</button>
         <button class="tools-tab" id="tabStopwatchBtn" onclick="switchToolsTab('stopwatch')">STOPWATCH</button>
       </div>
-      <button class="tools-close" onclick="closeToolsModal()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
     </div>
 
     <div class="tools-panel" id="timerPanel">
@@ -290,6 +388,82 @@
     </div>
   </div>
 </div>
+
+<div id="screen-history" class="screen hidden">
+  <div class="screen-card">
+    <div class="history-header">
+      <span class="history-title">Streaks &amp; History</span>
+    </div>
+
+    <div class="streak-stats">
+      <div class="stat-box">
+        <div class="stat-value" id="statCurrentStreak">0</div>
+        <div class="stat-label">Current Streak</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="statBestStreak">0</div>
+        <div class="stat-label">Best Streak</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="statTotalWorkouts">0</div>
+        <div class="stat-label">Workouts Done</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-calendar" class="screen hidden">
+  <div class="screen-card">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="navigateMonth(-1)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <span class="cal-month-label" id="calMonthLabel">July 2026</span>
+      <button class="cal-nav-btn" onclick="navigateMonth(1)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    <div class="cal-weekdays">
+      <span class="cal-weekday">S</span><span class="cal-weekday">M</span><span class="cal-weekday">T</span>
+      <span class="cal-weekday">W</span><span class="cal-weekday">T</span><span class="cal-weekday">F</span><span class="cal-weekday">S</span>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="cal-legend">
+      <div class="cal-legend-item"><span class="cal-legend-dot push"></span>Push</div>
+      <div class="cal-legend-item"><span class="cal-legend-dot pull"></span>Pull</div>
+      <div class="cal-legend-item"><span class="cal-legend-dot legs"></span>Legs</div>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="bottom-nav-btn active" id="navBtnWorkout" onclick="showScreen('workout')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 5v14M18 5v14M2 9h4M18 9h4M2 15h4M18 15h4M6 9h12M6 15h12"/>
+    </svg>
+    Workout
+  </button>
+  <button class="bottom-nav-btn" id="navBtnHistory" onclick="showScreen('history')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+    History
+  </button>
+  <button class="bottom-nav-btn" id="navBtnCalendar" onclick="showScreen('calendar')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    Calendar
+  </button>
+  <button class="bottom-nav-btn" id="navBtnTimer" onclick="showScreen('timer')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/>
+    </svg>
+    Timer
+  </button>
+</nav>
 
 <script>
   const workouts = [
@@ -357,12 +531,18 @@
   const setStates = {};
   workouts.forEach(w => w.exercises.forEach(ex => { setStates[ex.id] = new Array(ex.sets).fill(false); }));
 
+  // History / streaks: { "YYYY-MM-DD": ["push","pull",...] }
+  let workoutHistory = {};
+  const today = new Date();
+  let calViewYear = today.getFullYear();
+  let calViewMonth = today.getMonth();
+
   const STORAGE_KEY = "workoutTrackerState_v1";
 
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        activeDay, restDuration, warmupCollapsed, setStates
+        activeDay, restDuration, warmupCollapsed, setStates, workoutHistory
       }));
     } catch (e) {}
   }
@@ -382,6 +562,9 @@
             setStates[ex.id] = savedArr.map(Boolean);
           }
         }));
+      }
+      if (saved.workoutHistory && typeof saved.workoutHistory === "object") {
+        workoutHistory = saved.workoutHistory;
       }
     } catch (e) {}
   }
@@ -418,7 +601,7 @@
   document.addEventListener("click", unlockAudio, { once: true });
   document.addEventListener("touchstart", unlockAudio, { once: true });
 
-  renderRestDurBtns(); renderTabs(); renderDay(); syncTimerInputs(); updateTimerDisplay(); updateStopwatchDisplay();
+  // (init calls moved to the end of the script, after all consts/functions are declared)
 
   function renderRestDurBtns() {
     const c = document.getElementById("restDurBtns");
@@ -447,13 +630,24 @@
     saveState();
   }
 
+  const CATEGORY_EMOJI = { push: "💪", pull: "🔵", legs: "🦵" };
+  const CATEGORY_SUB = { push: "Chest, Shoulders, Triceps", pull: "Back, Biceps, Lats", legs: "Quads, Glutes, Hamstrings" };
+
   function renderTabs() {
-    const c = document.getElementById("tabs");
+    const c = document.getElementById("categoryGrid");
     c.innerHTML = "";
     workouts.forEach(w => {
+      const isActive = w.id === activeDay;
       const b = document.createElement("button");
-      b.className = "tab" + (w.id === activeDay ? " active" : "");
-      b.textContent = w.label;
+      b.className = "category-btn" + (isActive ? " active" : "") + (isActive && w.id === "pull" ? " pull-active" : "") + (isActive && w.id === "legs" ? " legs-active" : "");
+      b.innerHTML = `
+        <span class="category-emoji">${CATEGORY_EMOJI[w.id] || ""}</span>
+        <div class="category-info">
+          <div class="category-name">${w.label}</div>
+          <div class="category-sub">${CATEGORY_SUB[w.id] || ""}</div>
+        </div>
+        <svg class="category-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      `;
       b.onclick = () => { activeDay = w.id; renderTabs(); renderDay(); saveState(); };
       c.appendChild(b);
     });
@@ -466,6 +660,7 @@
     updateProgress();
     renderWarmup();
     renderExercises();
+    renderStreakCard();
   }
 
   function renderWarmup() {
@@ -513,6 +708,23 @@
     document.getElementById("progressFill").style.width = pct + "%";
     document.getElementById("progressLabel").textContent = done + "/" + total + " sets";
     document.getElementById("completeMsg").classList.toggle("visible", pct === 100);
+    if (pct === 100) markDayComplete(day.id);
+  }
+
+  function getDateKey(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function markDayComplete(workoutId) {
+    const key = getDateKey(new Date());
+    if (!workoutHistory[key]) workoutHistory[key] = [];
+    if (!workoutHistory[key].includes(workoutId)) {
+      workoutHistory[key].push(workoutId);
+      saveState();
+    }
   }
 
   function renderExercises() {
@@ -581,6 +793,7 @@
     if (!wasChecked) startRest(ex.name + " — Set " + (idx+1));
     renderExercises();
     updateProgress();
+    renderStreakCard();
     saveState();
   }
 
@@ -588,6 +801,7 @@
     const day = workouts.find(w => w.id === activeDay);
     day.exercises.forEach(ex => { setStates[ex.id] = new Array(ex.sets).fill(false); });
     dismissRest(); renderExercises(); updateProgress();
+    renderStreakCard();
     saveState();
   }
 
@@ -643,15 +857,7 @@
     ring.setAttribute("stroke-dashoffset", CIRC - progress);
   }
 
-  // ---------- Tools modal (Timer & Stopwatch) ----------
-
-  function openToolsModal() {
-    document.getElementById("toolsOverlay").classList.add("visible");
-  }
-
-  function closeToolsModal() {
-    document.getElementById("toolsOverlay").classList.remove("visible");
-  }
+  // ---------- Tools panel (Timer & Stopwatch) ----------
 
   function switchToolsTab(tab) {
     const isTimer = tab === "timer";
@@ -839,6 +1045,183 @@
       c.appendChild(row);
     });
   }
+
+  // ---------- History / Streaks / Calendar ----------
+
+  // ---------- Bottom nav screen switching ----------
+
+  function showScreen(name) {
+    ["workout", "history", "calendar", "timer"].forEach(s => {
+      document.getElementById("screen-" + s).classList.toggle("hidden", s !== name);
+      document.getElementById("navBtn" + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle("active", s === name);
+    });
+    if (name === "history") renderHistoryStats();
+    if (name === "calendar") {
+      const now = new Date();
+      calViewYear = now.getFullYear();
+      calViewMonth = now.getMonth();
+      renderCalendarScreen();
+    }
+  }
+
+  function navigateMonth(delta) {
+    calViewMonth += delta;
+    if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
+    if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
+    renderCalendarScreen();
+  }
+
+  function activeDatesSorted() {
+    return Object.keys(workoutHistory).filter(k => workoutHistory[k] && workoutHistory[k].length).sort();
+  }
+
+  function computeCurrentStreak() {
+    let streak = 0;
+    let d = new Date();
+    let key = getDateKey(d);
+    if (!(workoutHistory[key] && workoutHistory[key].length)) {
+      d.setDate(d.getDate() - 1);
+    }
+    while (true) {
+      key = getDateKey(d);
+      if (workoutHistory[key] && workoutHistory[key].length) {
+        streak++;
+        d.setDate(d.getDate() - 1);
+      } else break;
+    }
+    return streak;
+  }
+
+  function computeBestStreak() {
+    const dates = activeDatesSorted();
+    if (!dates.length) return 0;
+    let best = 1, run = 1;
+    for (let i = 1; i < dates.length; i++) {
+      const prev = new Date(dates[i-1] + "T00:00:00");
+      const cur = new Date(dates[i] + "T00:00:00");
+      const diffDays = Math.round((cur - prev) / 86400000);
+      if (diffDays === 1) { run++; } else { run = 1; }
+      if (run > best) best = run;
+    }
+    return best;
+  }
+
+  function computeTotalWorkouts() {
+    return Object.values(workoutHistory).reduce((a, arr) => a + (arr ? arr.length : 0), 0);
+  }
+
+  function getWeekCompletionStatus() {
+    // Week runs Sunday - Saturday, matching the calendar grid.
+    const now = new Date();
+    const sunday = new Date(now);
+    sunday.setDate(now.getDate() - now.getDay());
+    const status = { push: false, pull: false, legs: false };
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sunday);
+      d.setDate(sunday.getDate() + i);
+      const key = getDateKey(d);
+      const entries = workoutHistory[key] || [];
+      entries.forEach(id => { if (status.hasOwnProperty(id)) status[id] = true; });
+    }
+    return status;
+  }
+
+  function renderStreakCard() {
+    document.getElementById("streakCount").textContent = computeCurrentStreak();
+    const status = getWeekCompletionStatus();
+    const doneCount = Object.values(status).filter(Boolean).length;
+    document.getElementById("weekProgressFill").style.width = (doneCount / 3 * 100) + "%";
+
+    const container = document.getElementById("weekChecks");
+    container.innerHTML = "";
+    [
+      { id: "push", label: "Push" },
+      { id: "pull", label: "Pull" },
+      { id: "legs", label: "Legs" }
+    ].forEach(item => {
+      const isDone = status[item.id];
+      const div = document.createElement("div");
+      div.className = "week-check-item" + (isDone ? " complete" : "") + (isDone && item.id === "pull" ? " pull" : "") + (isDone && item.id === "legs" ? " legs" : "");
+      div.innerHTML = `
+        <span class="check-circle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+        <span class="week-check-label">${item.label}</span>
+      `;
+      container.appendChild(div);
+    });
+
+    const goalText = document.getElementById("streakGoalText");
+    goalText.textContent = doneCount >= 3
+      ? "You crushed all 3 workouts this week! 🔥"
+      : "Complete all 3 workouts this week";
+  }
+
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  function renderHistoryStats() {
+    document.getElementById("statCurrentStreak").textContent = computeCurrentStreak();
+    document.getElementById("statBestStreak").textContent = computeBestStreak();
+    document.getElementById("statTotalWorkouts").textContent = computeTotalWorkouts();
+  }
+
+  function renderCalendarScreen() {
+    document.getElementById("calMonthLabel").textContent = MONTH_NAMES[calViewMonth] + " " + calViewYear;
+    renderCalendarGrid();
+  }
+
+  function renderCalendarGrid() {
+    const grid = document.getElementById("calGrid");
+    grid.innerHTML = "";
+
+    const firstOfMonth = new Date(calViewYear, calViewMonth, 1);
+    const startOffset = firstOfMonth.getDay(); // 0 = Sunday
+    const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(calViewYear, calViewMonth, 0).getDate();
+    const todayKey = getDateKey(new Date());
+
+    const cells = [];
+
+    // leading days from previous month
+    for (let i = startOffset - 1; i >= 0; i--) {
+      cells.push({ dayNum: daysInPrevMonth - i, outside: true, dateObj: null });
+    }
+    // days in current month
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push({ dayNum: d, outside: false, dateObj: new Date(calViewYear, calViewMonth, d) });
+    }
+    // trailing days to fill final week
+    while (cells.length % 7 !== 0) {
+      const nextDay = cells.length - (startOffset + daysInMonth) + 1;
+      cells.push({ dayNum: nextDay, outside: true, dateObj: null });
+    }
+
+    cells.forEach(cell => {
+      const el = document.createElement("div");
+      let cls = "cal-cell";
+      if (cell.outside) cls += " outside";
+
+      let key = null;
+      if (cell.dateObj) {
+        key = getDateKey(cell.dateObj);
+        if (key === todayKey) cls += " today";
+      }
+
+      const completed = key && workoutHistory[key] ? workoutHistory[key] : [];
+      if (completed.length) cls += " has-activity";
+
+      el.className = cls;
+      const dotsHtml = completed.length
+        ? `<div class="cal-dots">${completed.map(id => `<span class="cal-dot ${id}"></span>`).join("")}</div>`
+        : "";
+      el.innerHTML = `<span>${cell.dayNum}</span>${dotsHtml}`;
+      grid.appendChild(el);
+    });
+  }
+
+  // Init — runs last, after every const/function above has been declared,
+  // so nothing here can hit a temporal-dead-zone reference error.
+  renderRestDurBtns(); renderTabs(); renderDay(); renderStreakCard(); syncTimerInputs(); updateTimerDisplay(); updateStopwatchDisplay();
 </script>
 </body>
 </html>
